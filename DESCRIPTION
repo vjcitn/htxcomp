@@ -1,9 +1,10 @@
 Package: htxcomp
 Title: Compendium of human transcriptome sequences
 Description: Compendium of human transcriptome sequences
-Version: 0.0.0
+Version: 0.0.1
 Author: Sean Davis, Vince Carey
 Suggests: knitr
+Imports: BiocFileCache, shiny
 Depends: 
 Maintainer: VJ Carey <stvjc@channing.harvard.edu>
 License: Artistic-2.0

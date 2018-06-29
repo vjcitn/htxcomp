@@ -1,6 +1,5 @@
 #' explore SRA metadata
 #' @import shiny
-#' @import DT
 #' @export
 htxApp = function() {
  if (!requireNamespace("glioBulk")) stop(
@@ -10,14 +9,15 @@ htxApp = function() {
  ui = fluidPage(
   sidebarLayout(
    sidebarPanel(
-    helpText("htxcomp surveyor.  Add study accession numbers to 
-'keep' box; vector of related experiment accession numbers will
-be returned when 'stop app' is pressed."),
-    checkboxInput("inComp", "limit to htxcomp", FALSE),
+    helpText(h2("SRA human RNA-seq surveyor.")),
+    helpText("Add study accession numbers to 
+'keep' box; SummarizedExperiment will
+be returned when 'return SE' is pressed."),
+    actionButton("btnSend", strong("return SE")),
+    checkboxInput("inComp", "Limit scope to htx compendium", TRUE),
     textInput("concept", "concept", "cancer"), width=2,
     selectInput("studyAcc", "keep", unique(studdata$study_accession),
-      multiple=TRUE),
-    actionButton("btnSend", "stop app")
+      multiple=TRUE)
    ),
    mainPanel(
     dataTableOutput("conceptTable")
@@ -25,10 +25,14 @@ be returned when 'stop app' is pressed."),
   )
  )
  server = function(input, output) {
+  getCurTable = reactive({
+   ans = studdata
+   if (input$inComp) ans = ans[which(
+     ans$experiment_accession %in% glioBulk::uniqueAcc_120518),]
+   ans
+   })
   output$conceptTable = renderDataTable({
-   curTable = studdata
-   if (input$inComp) curTable = curTable[which(
-     curTable$experiment_accession %in% glioBulk::uniqueAcc_120518),]
+   curTable = getCurTable()
    inds = grep(input$concept, curTable$study_title)
    validate( need(length(inds)>0, "concept not found in titles") )
    tmp = curTable[ inds, ]
@@ -40,7 +44,15 @@ be returned when 'stop app' is pressed."),
    tmp
    })
   observe({ if (input$btnSend > 0) isolate({
-                  stopApp(returnValue=input$studyAcc)
+#          validate(need(input$inComp, "scope must be limited to htx compendium, please check the 'Limit scope' box and verify your selections"))
+          curTable = getCurTable()
+          if (!input$inComp) warning("limiting scope to htxcomp despite setting of the 'Limit scope' button")
+          curTable = curTable[which(curTable$experiment_accession %in% glioBulk::uniqueAcc_120518),]
+          curTable = curTable[which(curTable$study_accession %in% input$studyAcc),]
+          showNotification("acquiring restfulSE", id="acqnote")
+          se = loadHtxcomp()
+          removeNotification(id="acqnote")
+          stopApp(returnValue=se[, curTable$experiment_accession])
                   }) })
   }
  runApp(list(ui=ui, server=server))
