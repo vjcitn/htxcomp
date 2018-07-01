@@ -15,6 +15,6 @@ studTable
 study-level metadata
 }
 \examples{
-head(experTable)
+head(htxcomp::studTable)
 }
 \keyword{datasets}

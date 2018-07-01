@@ -9,3 +9,15 @@ htxApp()
 \description{
 explore SRA metadata
 }
+\note{
+This function deals with
+extraction of compendium elements.  The overall scope is
+determined by htxcomp::studTable which is the list of
+all studies with taxon 9606, strategy RNA-seq,
+source transcriptomic.  Some studies will not have
+experiments in the compendium, and if such are selected,
+a warning will be generated in the session.
+}
+\examples{
+if (interactive()) htxApp()
+}

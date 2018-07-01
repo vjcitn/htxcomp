@@ -15,6 +15,6 @@ experTable
 experiment-level metadata
 }
 \examples{
-head(experTable)
+head(htxcomp::experTable)
 }
 \keyword{datasets}

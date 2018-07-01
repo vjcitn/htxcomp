@@ -15,6 +15,6 @@ uniqueAcc_120518
 experiment accessions available in compendium as of may 12 2018
 }
 \examples{
-head(uniqueAcc_120518)
+head(htxcomp::uniqueAcc_120518)
 }
 \keyword{datasets}
