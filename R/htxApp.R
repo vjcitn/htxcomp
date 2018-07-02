@@ -17,6 +17,8 @@ htxApp = function() {
  studdata = htxcomp::studTable
  studdata = studdata[which(
      studdata$experiment_accession %in% colnames(htxSE)),]
+ todrop = which(duplicated(studdata$experiment_accession))
+ if (length(todrop)>0) studdata = studdata[-todrop,]
  ui = fluidPage(
   sidebarLayout(
    sidebarPanel(
