@@ -6,12 +6,14 @@
 \usage{
 
   loadHtxcomp(remotePath = "https://s3.amazonaws.com/bcfound-bigrna/htxcompSE.rds",
-  cache = BiocFileCache())
+  cache = BiocFileCache(), genesOnly = TRUE)
 }
 \arguments{
 \item{remotePath}{path to an RDS representation of the DelayedArray-based SummarizedExperiment}
 
 \item{cache}{a BiocFileCache instance, defaulting to value of BiocFileCache()}
+
+\item{genes}{logical(1) if TRUE return reference to SummarizedExperiment with gene-level quantifications}
 }
 \description{
 load a SummarizedExperiment shell for the htx compendium

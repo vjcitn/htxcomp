@@ -1,4 +1,4 @@
-checkCache_htxcomp = function (cache = BiocFileCache()) 
+checkCache_htxcomp = function (cache = BiocFileCache(), genesOnly=TRUE) 
 {
     allr = bfcinfo(cache)$rname
     "https://s3.amazonaws.com/bcfound-bigrna/htxcompSE.rds" %in% 
@@ -10,14 +10,16 @@ checkCache_htxcomp = function (cache = BiocFileCache())
 #' @importFrom BiocFileCache bfcinfo BiocFileCache bfcrpath
 #' @param remotePath path to an RDS representation of the DelayedArray-based SummarizedExperiment
 #' @param cache a BiocFileCache instance, defaulting to value of BiocFileCache()
+#' @param genes logical(1) if TRUE return reference to SummarizedExperiment with gene-level quantifications
 #' @examples
 #' loadHtxcomp
 #' @export
 loadHtxcomp = function (remotePath = "https://s3.amazonaws.com/bcfound-bigrna/htxcompSE.rds",
-    cache = BiocFileCache()) 
+    cache = BiocFileCache(), genesOnly=TRUE) 
 {
     if (!checkCache_htxcomp(cache)) 
         message("adding RDS to local cache, future invocations will use local image")
+    if (genesOnly) remotePath = "https://s3.amazonaws.com/bcfound-bigrna/htxcomp_genesSE.rds"
     path = bfcrpath(cache, remotePath)
     readRDS(path)
 }
