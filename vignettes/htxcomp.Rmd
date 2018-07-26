@@ -1,0 +1,91 @@
+---
+title: "htxcomp -- a compendium of sequenced human transcriptomes"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+vignette: >
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteIndexEntry{htxcomp -- a compendium of sequenced human transcriptomes}
+  %\VignetteEncoding{UTF-8}
+output:
+  BiocStyle::html_document:
+    highlight: pygments
+    number_sections: yes
+    theme: united
+    toc: yes
+---
+
+```{r setup,echo=FALSE,results="hide"}
+suppressPackageStartupMessages({
+suppressMessages({
+library(BiocStyle)
+library(htxcomp)
+library(beeswarm)
+})
+})
+```
+
+# Introduction
+
+Comprehensive archiving of genome-scale sequencing experiments
+is valuable for substantive and methodological progress in
+multiple domains.
+
+The `r Biocpkg("htxcomp")` package provides functions for interacting
+with quantifications and metadata for over 180000 sequenced human
+transcriptomes.
+
+# Access to gene-level quantifications
+
+`r Biocpkg("BiocFileCache")` is used to manage access
+to a modest collection of metadata about compendium
+contents.  By default, `loadHtxcomp` will
+load the cache and establish a connection to
+remote HDF5 representation of quantifications.
+As of 26 July 2017 the gene level quantifications
+are obtained via an HDF Server instance run
+by Channing Division of Network Medicine at
+Brigham and Women's Hospital.
+
+```{r lklo}
+library(htxcomp)
+genelev = loadHtxcomp()
+genelev
+assay(genelev)
+```
+
+We can search the study titles for sample characteristics
+of interest.
+
+```{r lkchar}
+kpglio = grep("glioblastoma", genelev$study_title, 
+  ignore.case=TRUE)
+glioGene = genelev[,kpglio]
+glioGene
+```
+
+In this case we see that single-cell RNA-seq data are present.
+```{r lktit}
+sort(table(glioGene$study_title),decreasing=TRUE)[1:5]
+```
+
+To acquire numerical values, `as.matrix(assay())` is needed.
+```{r lkmat}
+beeswarm(as.matrix(assay(
+   glioGene["ENSG00000138413.13",1:100])), pwcol=as.numeric(factor(glioGene$study_title[1:100])), ylab="IDH1 expression")
+legend(.6, 15000, legend=unique(glioGene$study_accession[1:100]),
+   col=1:2, pch=c(1,1))
+```
+
+# Access to transcript-level quantifications
+
+By setting `genesOnly` to FALSE in `loadHtxcomp`,
+we get a transcript-level version of the compendium.
+Note that the number of samples in this version exceeds
+that of the gene version by two.  There are two
+unintended columns in the underlying HDF Cloud
+array, with names 'X0' and 'X0.1', that should
+be ignored.
+
+```{r dotx}
+txlev = loadHtxcomp(genesOnly=FALSE)
+txlev
+```

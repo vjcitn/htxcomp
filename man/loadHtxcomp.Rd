@@ -13,7 +13,10 @@
 
 \item{cache}{a BiocFileCache instance, defaulting to value of BiocFileCache()}
 
-\item{genes}{logical(1) if TRUE return reference to SummarizedExperiment with gene-level quantifications}
+\item{genesOnly}{logical(1) if TRUE return reference to 
+SummarizedExperiment with gene-level quantifications; in this 
+case the remotePath value is
+set to `https://s3.amazonaws.com/bcfound-bigrna/htxcomp_genesSE.rds`.}
 }
 \description{
 load a SummarizedExperiment shell for the htx compendium

@@ -10,7 +10,10 @@ checkCache_htxcomp = function (cache = BiocFileCache(), genesOnly=TRUE)
 #' @importFrom BiocFileCache bfcinfo BiocFileCache bfcrpath
 #' @param remotePath path to an RDS representation of the DelayedArray-based SummarizedExperiment
 #' @param cache a BiocFileCache instance, defaulting to value of BiocFileCache()
-#' @param genes logical(1) if TRUE return reference to SummarizedExperiment with gene-level quantifications
+#' @param genesOnly logical(1) if TRUE return reference to 
+#' SummarizedExperiment with gene-level quantifications; in this 
+#' case the remotePath value is
+#' set to `https://s3.amazonaws.com/bcfound-bigrna/htxcomp_genesSE.rds`.
 #' @examples
 #' loadHtxcomp
 #' @export
