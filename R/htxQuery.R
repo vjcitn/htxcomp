@@ -1,12 +1,13 @@
 #' retrieve 'restfulSE' SummarizedExperiment instance for selected studies in htx compendium
 #' @param study_accessions character vector of study accessions
+#' @param \dots passed to loadHtxcomp
 #' @return SummarizedExperiment instance
 #' @examples
 #' htxQuery("ERP011411")
 #' @export
 htxQuery = function(study_accessions, ...) {
  message("acquiring base restfulSE...")
- htxSE = loadHtxcomp()
+ htxSE = loadHtxcomp(...)
  studdata = htxcomp::studTable
  studdata = studdata[which(
      studdata$experiment_accession %in% colnames(htxSE)),]

@@ -19,6 +19,7 @@ suppressMessages({
 library(BiocStyle)
 library(htxcomp)
 library(beeswarm)
+library(SummarizedExperiment)
 })
 })
 ```

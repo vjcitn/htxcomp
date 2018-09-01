@@ -26,3 +26,9 @@
 #' @examples
 #' head(htxcomp::htxcomp.colnames)
 "htxcomp.colnames"
+#' bigrnaFiles: vector of files in bigrna
+#' @docType data
+#' @format vector of 186K character strings
+#' @examples
+#' head(htxcomp::bigrnaFiles)
+"bigrnaFiles"

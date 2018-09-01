@@ -8,6 +8,8 @@ htxQuery(study_accessions, ...)
 }
 \arguments{
 \item{study_accessions}{character vector of study accessions}
+
+\item{\dots}{passed to loadHtxcomp}
 }
 \value{
 SummarizedExperiment instance
