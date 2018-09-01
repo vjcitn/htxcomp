@@ -30,5 +30,8 @@
 #' @docType data
 #' @format vector of 186K character strings
 #' @examples
+#' \dontrun{
+#' # this is slow
 #' head(htxcomp::bigrnaFiles)
+#' }
 "bigrnaFiles"
