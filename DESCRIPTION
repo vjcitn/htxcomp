@@ -5,7 +5,7 @@ Description: Provide tools for working with a
 Version: 0.0.10
 Author: Sean Davis, Vince Carey
 Suggests: knitr, BiocStyle, beeswarm, tximportData,
-	SummarizedExperiment
+	SummarizedExperiment, DT
 Imports: BiocFileCache, shiny, tximport
 Depends: R (>= 3.4)
 Maintainer: VJ Carey <stvjc@channing.harvard.edu>
