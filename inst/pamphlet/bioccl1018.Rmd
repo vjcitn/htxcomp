@@ -1,6 +1,5 @@
 ---
-title: "Bioconductor:Cancer -- Cloud scale innovations, October 2018"
-subtitle: "Architectural concepts towards interactive cloud-scale cancer multiomics"
+title: "Bioconductor:Cancer -- Towards cloud-scale interactive cancer genomics, October 2018"
 author: "S Davis, AC Culhane, M Ramos, H Pages, BJ Stubbs, S Gopaulakrishnan, S Pollack, B Halbe-Kains, L Waldron, MT Morgan, V Carey"
 date: "`r Sys.Date()`"
 output:
@@ -28,11 +27,14 @@ library(ggplot2)
 library(BiocOncoTK)
 library(ontoProc)
 library(SRAdbV2)
+library(UpSetR)
+library(MultiAssayExperiment)
+library(htxcomp)
 set.seed(1234)
 })
 ```
 
-# Introduction
+# **Introduction**
 
 `r newthought("Strategic thinking about computing")` for
 cancer genomics
@@ -47,23 +49,23 @@ strategy for cloud-oriented Bioconductor:Cancer
 can be understood.
 **All demonstrations are based on the "devel branch" of Bioconductor in R 3.5.**
 
-# Basic map of the situation
+# **Basic map of the situation**
 
 We will use the term "architecture" in conjunction
 with the following broad categories of relevance
 to computing for cancer genomics.
 
-- **Conceptual architecture:** How are formal ontologies,
-APIs, and concrete data tables used together to
+- **Conceptual architecture:** How are formal ontologies^[
+See the OBO Foundry Principles document (http://www.obofoundry.org/principles/fp-000-summary.html).],
+APIs, and concrete data tables used together
 efficiently identify key biological and
-therapeutic processes in cancer?
-
+therapeutic processes in cancer?^[The Genomics API concept is helpfully reviewed in @Swaminathan2016.]
 - **Data architecture:** How are cohorts, trials, experiments, samples,
 quantifications, and annotations best represented for 
 efficient 
 solutions to problems arising in computational biology of cancer?
 Are cloud-scale approaches to managing and interrogating
-"big data" effectively usable by enough researchers?
+"big data" effectively usable by a broad community of researchers?
 
 - **Analysis architecture:**  How can advances in conceptual
 and data architecture help to accelerate the development
@@ -74,14 +76,25 @@ In what follows we aim to get very concrete about the
 ways in which the Bioconductor:Cancer project delivers advances
 in these areas.
 
-# Conceptual architecture
+# **Conceptual architecture for FAIRness in cancer genomics**
 
-## Ontology
+The FAIR (Findable, Accessible, Interoperable,
+Reusable) principles for scientific data stewardship are
+widely accepted.  Ontological information science
+is helpful for discovery and interoperation of genomic
+data resources, and interfaces to genomic ontologies are
+a fundamental part of Bioconductor:Cancer's conceptual
+architecture.  Using and defining APIs for component
+and user interaction are additional major concerns.
+
+## Ontology tools
 
 Results of experiments and trials in human cancer
 produce information in many domains.  Systematic synthesis
 of relevant information depends on harmonization of vocabularies,
-and progress is incomplete.  The ontoProc package simplifies
+and more progress on adoption and verifiable compliance
+with best practices
+is needed.  The ontoProc package simplifies
 usage of key ontologies in the Open Biological Ontologies
 Foundry.  We consider the oncotree vocabulary produced at 
 Sloan-Kettering.^[http://oncotree.mskcc.org/#/home?tab=news shows
@@ -98,13 +111,18 @@ grep("Breast", otr$name, value=TRUE)[1:4]
 Code like this leads to the observation that there are
 `r length(grep("Breast", otr$name))` terms involving
 `Breast` in the vocabulary
-^[A view of relationships among 10 terms related to "Breast".
+^[A view of relationships among 10 oncoTree terms related to "Breast".
 ![](br3.png){ width=70% }].  Relationships among these
 terms are encoded in `otr`.  The collection of ontologies
 usable in this way can be gleaned from
 ```{r lklklk}
 grep("Onto", ls("package:ontoProc"), value=TRUE)
 ```
+<!--
+jj = names(
+onto_plot(otr, names(jj)[2:10], fontsize=45, fillcolor="transparent")
+-->
+
 Ideally, we would use ChEBI, EFO, and Cellosaurus in
 integrative analyses of pharmacogenomic experiments 
 that account for structural and functional
@@ -115,16 +133,33 @@ molecular observations of tumors in TCGA would be fostered
 by adoption of conventions on genomic and clinical vocabularies.
 We will discuss this situation below.
 
-## APIs
+## APIs and microservice concepts^["Microservice architecture has taken hold in application design for a number of reasons ..., but ultimately, the fundamental driver has been the opportunity for significant increase in productivity. Gains are achieved by dividing larger, more complex applications into small, manageable projects that encapsulate common functionality. Each microservice represents a “black-box” with a well-defined application programming interface (API) bundled with its own integral resources, thus eliminating external dependencies. This encapsulation simplifies the division of labor for teams of software developers and reduces the inherent overhead of multiple developers working on the same sections of code. The narrow scope of functionality of a single microservice allows for thorough testing and optimization of each component in isolation, leading to higher reliability and performance of the overall parent application." (@Williams2016)]
 
-Effectiveness of computational research depends upon reliable
-interaction among independently developed components.
-The API concept helps to promote durable and 
-correct interaction.  
-
-To develop the capacity for Bioconductor
+It may be fruitful to construe the solutions to many
+problems arising in cancer genome analysis as "microservices".
+<!--
+Effectiveness of computational research in cancer
+genomics depends upon reliable
+interaction among independently developed and evolving components.
+Under certain conditions, the API concept helps to promote durable and 
+correct component interactions.
+-->
+Numerous projects have implemented REST APIs to expose
+metadata and data about resources relevant to cancer
+genomics.  
+<!--The cost of transforming API outputs to
+structures that can be input to analytical tools is
+often considerable.  Attention must be paid
+to data type description,
+record validation, and fault-tolerance, by both
+producers and consumers.  
+-->
+As an illustration of the basic concept,
+S. Davis of NCI has created the SRAdbV2 package^[https://github.com/seandavi/SRAdbV2],
+which provides
+capacity for R/Bioconductor
 users to survey all sequencing experiments housed
-in NCBI SRA, S. Davis has created the SRAdbV2 package.
+in NCBI SRA.
 Metadata that are continuously developed at SRA are
 transformed for "serverless" interrogation using
 Elasticsearch.  Thus
@@ -134,6 +169,7 @@ oidx = Omicidx$new()
 allhrec = oidx$search(q="sample_taxon_id: 9606")
 allhrec$count()
 ```
+\noindent
 gives the number of records involving human samples.  A selection
 of fields that can be interrogated to acquire accession
 numbers for experiments of interest is
@@ -142,15 +178,89 @@ lk = allhrec$scroll()
 sample(mm <- names(lk$yield()), size=5)
 ```
 There are `r length(mm)` fields whose semantics must
-be known to enable effective searching.
+be known to enable effective searching^[These fields constitute
+a small fraction of the overall data model of the
+NCI Genomic Data Commons; see https://gdc.cancer.gov/developers/gdc-data-model/gdc-data-model-components.].  Some of these
+fields include subfields whose structure varies from
+experiment to experiment.
+
+It is useful to contrast this approach to the predecessor
+package, SRAdb, which was based on a 35GB SQLite database,
+updated semiannually,
+that was installed on each user's system.  SRAdbV2 is based
+on a chain of transformations from NCBI's XML metadata compendium,
+harvested every other week, leading to a service that responds
+to detailed queries in the Lucene query idiom.
+The stability and local nature of the SRAdb approach is
+traded for a potentially more volatile resource that
+is very light weight and universally accessible.
+
+The REST API underlying the SRAdbV2 service is
+documented at https://api-omicidx.cancerdatasci.org/sra/1.0/ui/.
+
+# **Data architecture**
+
+We consider two cloud-scale solutions for multiomic
+data in cancer: Google BigQuery, as employed
+in the ISB CGC project, extended from TCGA to the Pancancer Atlas,
+and the HDF Scalable Data Service.  Our approach
+emphasizes hybridized data interfaces: certain
+data such as focused annotation and sample attributes can
+be resident in memory, while voluminous quantifications
+are managed remotely and queried only when needed.
+
+## Lazy MultiAssayExperiments with BigQuery back end
+
+The SummarizedExperiment class unifies genomic
+quantifications with metadata about samples, 
+assay features, and experimental protocol.  This
+has been generalized for multi-assay experiments
+(where tissue from a given sample is characterized along
+various molecular dimensions).  We used the
+`buildPancanSE` function of the BiocOncoTK package,
+and the MultiAssayExperiment construction API to
+develop `blcaMAE`, the Pancancer Atlas data on RNA-seq,
+miRNA-seq, and Illumina Infinium methylation results
+for both tumor and normal tissues derived from the TCGA Bladder
+Cancer cohort.
+```{r gg, cache=TRUE, echo=FALSE,results="hide"}
+load("blcaMAE.rda")
+assay(experiments(blcaMAE)$meth_n)@seed@seed@seed@filepath@bqconn@quiet = TRUE
+
+```
+```{r lklkbl}
+blcaMAE
+```
+The relative frequencies of multiomic and tumor:normal pair availability
+are shown below.
+```{r lkbl,fig.height=3}
+upsetSamples(blcaMAE)
+```
+Quantifications are accessed as needed through the DelayedArray protocol:
+```{r lkass}
+suppressMessages(assay(experiments(blcaMAE)$meth_n["rs939290",]))
+```
+
+
+
+## Lazy SummarizedExperiments over HDF Scalable Data Service
+
+
+```{r lklkiii}
+library(htxcomp)
+htxg = loadHtxcomp()
+htxg
+assay(
+ subsetByOverlaps(htxg, GRanges("chr1", IRanges(1e6,2e6)))
+ )
+```
 
 
 
 
 
 
-What is a good approach to reducing redundant computation,
-treating new inferences and their uncertainties as data
+
 
 conceptual architecture
  - ontologies
@@ -170,172 +280,6 @@ analysis architecture
  - learning transfer - kipoi?
 
 next steps
-
-The following code can be used to work with the Recount2 ^[Collado-Torres, Leonardo, Abhinav Nellore, Kai Kammers, Shannon E. Ellis, Margaret A. Taub, Kasper D. Hansen, Andrew E. Jaffe, Ben Langmead, and Jeffrey T. Leek. 2017. _Reproducible RNA-
-seq analysis using recount2._ Nature Biotechnology 35 (4): 319–21. doi:10.1038/nbt.3838.] version of the GTEx RNA-seq tissue expression data.
-
-```{r dorec2,eval=TRUE,echo=FALSE,results="hide",cache=TRUE}
-suppressMessages({
-library(restfulSE)
-gt = gtexTiss()
-})
-```
-```{r dodo,eval=FALSE}
-library(restfulSE)
-gt = gtexTiss()
-gt
-```
-```{r doec,echo=FALSE}
-cat("class: RangedSummarizedExperiment 
-dim: 58037 9662 
-metadata(0):
-assays(1): recount
-rownames(58037): ENSG00000000003.14 ENSG00000000005.5 ...
-  ENSG00000283698.1 ENSG00000283699.1
-rowData names(3): gene_id bp_length symbol
-colnames(9662): SRR660824 SRR2166176 ... SRR612239 SRR615898
-colData names(82): project sample ... title characteristics"
-)
-```
-```{r lkta,eval=FALSE}
-table(gt$smts)
-```
-```{r lkts,echo=FALSE}
-cat("
-                 Adipose Tissue   Adrenal Gland         Bladder           Blood 
-              5             620             159              11             595 
-   Blood Vessel     Bone Marrow           Brain          Breast    Cervix Uteri 
-            750             102            1409             218              11 
-...")
-```
-A quick visual check of center labeling and normalization success:
-```{r chkgap}
-gind = which(unlist(rowData(gt)$symbol) == "GAPDH")
-mydf = data.frame(logGAPDH=log(as.numeric(assay(gt[gind,]))+1),
-  center=gt$smcenter)
-library(ggplot2)
-ggplot(mydf, aes(x=center, y=logGAPDH, colour=center)) + geom_boxplot()
-```
-
-Other resources conveyed via this HDF5 Server include
-the 10x Genomics 1.3 million neuron dataset (use `restfulSE::se1.3M()`),
-CONQUER-based quantifications^[Soneson, Charlotte, and Mark D. Robinson. 2018. _Bias, robustness
-and scalability in single-cell differential expression analysis._ Nature Methods 15 (4). Nature Publishing Group: 255–61. doi:10.1038/nmeth.4612.] of single-cell RNA-seq studies by
-Patel et al.^[Patel, Anoop P, Itay Tirosh, John J Trombetta, Alex K Shalek, M Shawn, Hiroaki Wakimoto, Daniel P Cahill, et al. 2014. _Single-cell RNA-seq highlights intratumoral heterogeneity in primary glioblastoma._ Science 344 (6190): 1396–1401. doi:10.1126/science.1254257.] and Darmanis et al.^[Darmanis, Spyros, Steven A. Sloan, Derek Croote, Marco Mignardi, Sophia Chernikova, Peyman Samghababi, Ye Zhang, et al. 2017. _Single-Cell RNA-Seq Analysis of Infiltrating Neoplastic Cells at
-the Migrating Front of Human Glioblastoma._ Cell Reports 21 (5). ElsevierCompany.: 1399–1410. doi:10.1016/j.celrep.2017.10.030.]
-and the "tabula muris"^[Quake, Stephen R., Tony Wyss-Coray, and Spyros Darmanis. 2017. _Transcriptomic characterization of 20 organs and tissues from mouse at single cell resolution creates a Tabula Muris._ bioRxiv, 237446. doi:10.1101/237446.] quantifications distributed at the
-Human Cell Atlas.  Check with pamphlet authors for more details.
-
-# HDF Cloud for DelayedArrays
-
-HDF Cloud is newer and more scalable than HDF5 Server,
-but is not yet open source.  We are experimenting with
-HDF Cloud thanks to support from John Readey of the HDF Group.
-You can start working with the 1.3 million neuron data through
-the DelayedArray interface as follows.  We illustrate summation
-of selected columns.
-```{r lkdm,eval=FALSE}
-dm10x = H5S_Array(URL_hsds(), 
-  "/shared/bioconductor/tenx_full.h5",
-  "newassay001")
-dim(dm10x)
-colSums(dm10x[,1:6])
-```
-The result of `HSDS_Matrix` can be used as the assay component
-of a SummarizedExperiment.
-
-To *write* data to this instance of HDF Cloud, you will need 
-privileges.  Given
-any HDF5 dataset, the utilities for porting to the cloud are part
-of the h5pyd python package.
-
-# Google BigQuery for MultiAssayExperiments derived from the PanCancer Atlas
-
-The restfulSE and BiocOntoTK packages help authenticated users to
-derive SummarizedExperiment instances for TCGA and PanCancer-Atlas
-with Google BigQuery back ends, as managed by the Institute for
-Systems Biology.
-
-```{r dobrca,eval=FALSE}
-library(BiocOncoTK)
-bq = pancan_BQ() # authenticate
-brca_mir = pancan_SE(bq) # defaults are BRCA micro-RNA assays
-brca_mir
-```
-```{r resbr,echo=FALSE}
-cat("class: SummarizedExperiment 
-dim: 743 1068 
-metadata(0):
-assays(1): assay
-rownames(743): hsa-miR-9-3p hsa-miR-191-3p ... hsa-miR-516a-5p
-  hsa-miR-892b
-rowData names(0):
-colnames(1068): TCGA-3C-AAAU TCGA-3C-AALJ ... TCGA-Z7-A8R6 TCGA-Z7-A8R5
-colData names(746): bcr_patient_uuid bcr_patient_barcode ...
-  bilirubin_upper_limit days_to_last_known_alive")
-```
-
-The BiocOncoTK vignette indicates how to construct MultiAssayExperiment^[Ramos, Marcel, Lucas Schiffer, Angela Re, Rimsha Azhar, Azfar Basunia, Rodriguez Cabrera, Tiffany Chan, Philip Chapman, Sean Davis, and David Gomez-cabrero. 2017. _Software for the integration of multi-omics experiments in Bioconductor._ Cancer Research 77: e39–e42. doi:10.1158/0008-5472.CAN-17-0344.]
-instances on the basis of SummarizedExperiment instances like
-this.
-
-
-# The omicdx/BigRNA project
-
-As the number of high throughput datasets available in public
-repositories grows, flexible, performant search engines that 
-expose full metadata records become increasingly important
-to researchers. In addition, access to computable metadata 
-allows researchers to enhance the value of data by augmenting
-the metadata with other data resources, machine learning approaches,
-and data "mashups".
-
-The Sequence Read Archive (SRA) is the largest repository of publicly
-available sequencing data. We have mined the entire metadata set 
-from the SRA using the open source Big Data platform, Apache Spark. After 
-extracting and transforming these metadata from NCBI files, we have
-loaded them into the high-performance search and analytics Elasticsearch
-engine. These metadata are exposed via a RESTful application programming interface (API), 
-conforming to the OpenAPI specification^[https://swagger.io/docs/specification/about/], facilitating
-client template development in any of dozens of supported languages. Finally,
-we have developed an R-based client that provides a bridge between the SRA
-resource and the Bioconductor developer and user community.
-
-The metadata are a key component for organizing results
-of uniform reprocessing of all RNA-seq experiments.  An initial
-demonstration of this process generates a SummarizedExperiment
-with assay data in HDF Cloud for 1222 RNA-seq runs on 
-glioblastoma samples.
-
-```{r jjj,echo=FALSE}
-cat("class: RangedSummarizedExperiment 
-dim: 200401 1222 
-metadata(3): origin sessionInfo limitation
-assays(5): abundance count_lstpm length bsmedian bsMAD
-rownames(200401): ENST00000456328.2 ENST00000450305.2 ...
-  ENST00000387460.2 ENST00000387461.2
-rowData names(6): source gene_id ... transcript_support_level
-  protein_id
-colnames(1222): SRX1558818 SRX1558809 ... SRX683527 SRX683523
-colData names(53): experiment_Insdc experiment_LastMetaUpdate ...
-  study_study_type study_title")
-```
-With this object users can decompose the data by
-study or combine data across studies using familiar
-R idioms.  The omicidx resource provides the metadata; below
-we print titles and sample counts for the eight largest studies,
-filtering the `colData` of the SummarizedExperiment.
-```{r lkmet,echo=FALSE}
-cat("  accession                                                 title n.expt
-1  SRP057500 RNA-seq of tumor-educated platelets enables blood-...    285
-2  ERP013498                      CRISPR_Screening_in_Glioblastoma    109
-3  SRP044668 MRI-localized biopsies reveal subtype-specific dif...     90
-4  SRP109992 Sox5/6/21 prevent oncogene driven transformation o...     72
-5  SRP092795 Ion Channel Expression Patterns in Glioblastoma St...     69
-6  SRP072494 Transcriptional changes induced by bevacizumab com...     36
-7  SRP069235       Gene expression in human glioblastoma specimens     32
-8  SRP087439 Genome-wide mRNA expression in human glioblastoma ...     29")
-```
 
 # Funding support
 
