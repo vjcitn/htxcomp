@@ -42,7 +42,7 @@ to a modest collection of metadata about compendium
 contents.  By default, `loadHtxcomp` will
 load the cache and establish a connection to
 remote HDF5 representation of quantifications.
-As of 26 July 2017 the gene level quantifications
+As of 26 November 2018 the gene level quantifications
 are obtained via an HDF Server instance run
 by Channing Division of Network Medicine at
 Brigham and Women's Hospital.

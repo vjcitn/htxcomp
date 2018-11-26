@@ -27,3 +27,14 @@ loadHtxcomp = function (remotePath = "https://s3.amazonaws.com/bcfound-bigrna/ht
     readRDS(path)
 }
 
+#' add gene-level rowData derived from transcript level rowRanges
+#' @param x result of loadHtxcomp()
+#' @export
+addRD = function(x) {
+ txl = unlist(rowRanges(x), use.names=FALSE)
+ drp = which(duplicated(txl$gene_id))
+ txl = txl[-drp]
+ rowData(x) = mcols(txl)[, c("gene_type", "gene_id", "gene_name", "havana_gene")]
+ x
+}
+ 

@@ -12,6 +12,9 @@ bigrnaFiles
 bigrnaFiles: vector of files in bigrna
 }
 \examples{
+\dontrun{
+# this is slow
 head(htxcomp::bigrnaFiles)
+}
 }
 \keyword{datasets}

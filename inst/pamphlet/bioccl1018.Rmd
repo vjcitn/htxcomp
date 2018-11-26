@@ -58,14 +58,15 @@ to computing for cancer genomics.
 - **Conceptual architecture:** How are formal ontologies^[
 See the OBO Foundry Principles document (http://www.obofoundry.org/principles/fp-000-summary.html).],
 APIs, and concrete data tables used together
-efficiently identify key biological and
+efficiently to identify key biological and
 therapeutic processes in cancer?^[The Genomics API concept is helpfully reviewed in @Swaminathan2016.]
 - **Data architecture:** How are cohorts, trials, experiments, samples,
 quantifications, and annotations best represented for 
 efficient 
 solutions to problems arising in computational biology of cancer?
 Are cloud-scale approaches to managing and interrogating
-"big data" effectively usable by a broad community of researchers?
+"big data" effectively usable by a community of researchers with
+diverse interests and computational skills?
 
 - **Analysis architecture:**  How can advances in conceptual
 and data architecture help to accelerate the development
@@ -245,23 +246,107 @@ suppressMessages(assay(experiments(blcaMAE)$meth_n["rs939290",]))
 
 ## Lazy SummarizedExperiments over HDF Scalable Data Service
 
+HDF5 is widely used for array-structured quantification sets
+in genomics.  The HDF Scalable Data Service (HSDS)
+leverages the HDF data model for efficient design of
+hierarchical organizations of numerical arrays and their metadata,
+deployed in an S3 object store, exposed through a REST API.
+Query resolution is multiplexed.
 
+In this example, we acquire a lazy
+but richly annotated HSDS-resident image of the
+BigRNA compendium assembled by Sean Davis of NCI (http://bigrna.cancerdatasci.org/).  This is a collection of all RNA-seq studies of
+human-derived samples, uniformly preprocessed and quantified
+to gene models of GENCODE version 27.  
+We present it to the user as a SummarizedExperiment,
+and construct a query to filter the content of the compendium
+based on transcript location.
 ```{r lklkiii}
-library(htxcomp)
+library(htxcomp) # github.com/vjcitn/htxcomp
 htxg = loadHtxcomp()
-htxg
-assay(
- subsetByOverlaps(htxg, GRanges("chr1", IRanges(1e6,2e6)))
- )
+dim(htxg)
+subsetByOverlaps(htxg, GRanges("chr1", IRanges(1e6,2e6)))
+```
+\noindent
+Notice the number of samples, 181134.  Selection of
+experiments of interest is accomplished using SRAdbV2 to 
+obtain accession codes, say \texttt{KP}, and then
+working with \texttt{htxg[,kp]}.
+
+Thanks to John Readey of the HDF Group, HSDS images of the
+RNA-seq archives from GTEx, Tabula Muris, HapMap,
+and two single-cell RNA-seq experiments in glioblastoma are
+available for public use via the HDF Kita Lab. 
+The Bioconductor restfulSE package can also be used to
+work with these datasets.
+
+# **Analysis architecture**
+
+We now demonstrate some virtues of the hybrid data architecture
+consisting of numerical data in a remote bigdata back end,
+and annotation and query support provided by R/Bioconductor.
+
+## Multitumor, multigene survey of association of gene expression with microsatellite instability
+
+Figure 5C^[Code segment for boxplot panel. ![](panelCode.png){width=60%}]
+of @Bailey2018 indicates that
+microsatellite instability (MSI) is associated with
+different expression signatures of immune cell infiltration
+for adenocarcinomas of colon (COAD) and stomach (STAD), and 
+uterine corpus endometrial carcinoma (UCEC).  
+The MSI scores developed using MSIsensor are found
+in Table S5 of @Ding2018.
+To reproduce aspects of this finding using the BigQuery
+Pancancer-atlas back end, we
+a) authenticate
+to the BigQuery platform, b) select tumor types
+and assay for \texttt{SummarizedExperiment}
+construction, c) bind Ding et al.'s MSI values
+d) acquire and transform the
+expression values of interest, and e) form the stratified boxplots.
+The basic findings of Bailey et al. are replicated.
+
+![](microsatpan2.png)
+
+## Comparing cell-type-specific expression distributions after immunopanning in GBM samples
+
+As a
+prelude to single-cell RNA-sequencing of glioblastoma (GBM)
+tumors from four patients,
+@Darmanis2017 used immunopanning to increase the 
+proportion of non-neoplastic cells that constitute
+the "migrating front" of progression of glioblastoma.
+Antibody to CD45 was used to capture microglial cells.
+Using the code to the right^[
+Code segment to create density traces.
+![](pancode.png){width=65%} 
+], we compare
+the distribution of CD45 expression among the 
+classes of
+cells as labeled in the metadata of GSE84465,
+the NCBI GEO archive from which the quantifications
+were derived.
+
+```{r lklkaoaa,cache=TRUE,echo=FALSE}
+library(rhdf5client)
+library(SummarizedExperiment)
+library(BiocOncoTK)
+library(ggplot2)
+cdar = BiocOncoTK::darmGBMcls
+ind = match("PTPRC", rowData(cdar)$symbol)
+var = gsub("selection: ", "", 
+       cdar$characteristics_ch1.8)
+vals = log10(assay(cdar[ind,])+1)
+ddd = data.frame(log10norm=vals, pan=var)
+ggplot(ddd, aes(x=log10norm, colour=pan)) + 
+  geom_density() + ylim(0,1) + 
+  xlab("log10 CD45+1")
 ```
 
 
 
 
-
-
-
-
+<!--
 conceptual architecture
  - ontologies
  - apis (SRAdbV2, HSDS)
@@ -280,6 +365,7 @@ analysis architecture
  - learning transfer - kipoi?
 
 next steps
+-->
 
 # Funding support
 
