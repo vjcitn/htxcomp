@@ -1,0 +1,167 @@
+---
+title: "The human transcriptome compendium: Scalable discovery and acquisition of RNA-seq data"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+author: 
+  - name: Sean Davis
+    affiliation: NCI
+  - name: John Readey
+    affiliation: HDF Group
+  - name: Herve Pages
+    affiliation: Fred Hutchinson Cancer Research Center
+  - name: Samuela Pollack
+    affiliation: DFCI
+  - name: Shweta Gopaulakrishnan
+    affiliation: BWH
+  - name: BJ Stubbs
+    affiliation: BWH
+  - name: Levi Waldron
+    affiliation: CUNY
+  - name: Martin Morgan
+    affiliation: RPCI
+  - name: Vincent Carey
+    affiliation: BWH
+abstract: >
+  We describe three components of a data discovery and
+  delivery system for human transcriptomics.  SRAdbV2 is
+  a modern metadata management and query resolution
+  utility for NCBI SRA.  HDF Scalable Data Service (HSDS) is a
+  high-performance archive for numerical array storage
+  and interrogation.  htxcomp is a Bioconductor package
+  defining convenient interfaces to SRAdbV2 and HSDS
+  to afford performant access to transcript-by-sample
+  quantifications obtained using the salmon quantification
+  algorithms.  At present, 181134 transcriptomes are available
+  for interrogation.  This approach to defining a cloud-scale
+  compendium of genome-scale assay outputs provides scalable
+  solutions for both large-scale analysis of statistical 
+  properties of assay protocols, and focused interrogation 
+  of gene- or transcript-level variation across phenotypes 
+  of interest.
+output:
+  BiocStyle::html_document:
+    highlight: pygments
+    number_sections: yes
+    theme: united
+    toc: yes
+---
+
+```{r setup,echo=FALSE,results="hide"}
+suppressPackageStartupMessages({
+suppressMessages({
+library(BiocStyle)
+library(htxcomp)
+library(SummarizedExperiment)
+})
+})
+```
+
+
+
+# Introduction
+
+The Sequence Read Archive (SRA) is NIH's primary archive of
+high-throughput sequencing data and is part of the International
+Nucleotide Sequence Database Collaboration (INSDC) that includes at
+the NCBI Sequence Read Archive (SRA), the European Bioinformatics
+Institute (EBI), and the DNA Database of Japan (DDBJ). Data submitted
+to any of the three organizations are shared among them.
+[From SRAdbV2 README]  These archives are fundamental resources
+for integrative computational biology, but discovery and
+retrieval of analyzable information is cumbersome.
+
+The FAIR (Findable, Accessible, Interoperable, and
+Reusable) principles of genomic data architecture are
+important for accelerating achievement of ambitions 
+of integrative genome biology.  Diversity of computational
+approaches to data publishing, discovery, and acquisition
+is inevitable, but growth in adoption of representational
+state transfer (REST) application programming interface (API) 
+methods has greatly simplified solutions to discovery
+and communication problems arising in genomic data access.
+Briefly, client software can drive server computations to
+deliver structured metadata and data, simply by encoding
+a browsable URL with directives expressed in a limited and
+intuitive vocabulary.  
+
+The "omicidx" API defined at api-omicidx.cancerdatasci.org
+uses the RESTful GET directive to retrieve hierarchically structured
+metadata about all experiments lodged in NCBI SRA.  High-performance
+metadata and data harvesting and transformation were used to
+construct a compendium of 181134 RNA-seq experiments, uniformly
+preprocessed with the state-of-the-art salmon quantification
+algorithm.  Quantifications were then combined in HDF5 and
+deposited in the HDF Scalable Data Service.  Interactive and
+programmatic surveys of the compendium are supported through
+R programming with the htxcomp package.  This combination of
+metadata and data APIs constitute an implementation of FAIR
+principles for a major resource in computational biology.  The
+methods can be extended for real-time updating of the
+compendium and for redeployment in other domains
+such as population genome sequencing for common disease genetics.
+
+# The omicidx API for interrogating NCBI SRA metadata
+
+## Explorable API
+
+The OpenAPI specification framework includes tools for
+building user-friendly interfaces to REST API functions.
+
+From OpenAPI specification version 3.0.2:
+"The OpenAPI Specification (OAS) defines a standard, language-agnostic 
+interface to RESTful APIs which allows both humans and computers to 
+discover and understand the capabilities of the service without access 
+to source code, documentation, or through network traffic inspection. 
+When properly defined, a consumer can understand and interact with 
+the remote service with a minimal amount of implementation logic."
+
+Figures 1 and 2 depict the OpenAPI-generated interface
+for exploring capabilities of the omicidx service.
+
+![Figure 1. API endpoints for the GET method for api-omicidx.cancerdatasci.org,
+at the heart of SRAdbV2.](SRAAPIpic.png)
+
+![Figure 2. Interactive interface to the omicidx API with exemplary GET/study
+request.](swaggerDemo.png)
+
+## Metadata hierarchy
+
+Metadata about a single experiment forms a tree with
+nodes providing information about the study in which the experiment
+was performed, the samples used, and technical details about
+equipment used.
+
+![Figure 3. Tree-structured schematic of metadata hierarchy for a 
+single hit resulting
+from GET/search/experiment with query "title: cancer"](metatree.png)
+
+## Computational architecture
+
+NCBI SRA documents its contents in XML.  The complete corpus of
+XML documents is transformed to JSON using Apache Spark, then
+injected into a cloud-resident instance of ElasticSearch.
+ElasticSearch is queried using lucene syntax via a serverless
+deployment of the omicidx API.
+
+# HDF Scalable Data Service (HSDS) for 181134 RNA-seq experiments
+
+HDF5 is a widely used format for representing scientific data and
+metadata.  HDF5 is the native format for quantification of single-cell
+RNA-seq experiments in the 10x framework, and has been adopted
+in other bioinformatic contexts.  HSDS implements a data object store
+design for HDF5 datasets, with a publicly accessible instance at
+hsdshdflab.hdfgroup.org.  Locally generated HDF5 datasets are 
+transformed to cloud-resident objects using functionality of the 
+h5pyd python library, and a RESTful API is provided for querying
+the data at element, slice, or dataset levels.  HSDS permits
+multiple clients to perform simultaneous reads or writes
+to any dataset.
+
+We have used Apache Spark and the salmon
+software suite to transform NCBI SRA fastq data on 181134
+RNA-seq experiments to uniformly quantified abundances of
+transcripts-per-sample at
+```http://bigrna.cancerdatasci.org/results/human/27```.
+These salmon outputs are transformed to HDF5 using
+Bioconductor tximport.  The gene-level quantifications are
+available in the /shared/bioconductor/htxcomp_genes.h5
+domain at hsdshdflab.hdfgroup.org.

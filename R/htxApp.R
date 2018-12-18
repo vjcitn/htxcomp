@@ -1,4 +1,7 @@
+
 #' explore SRA metadata
+#' @rawNamespace importFrom("SummarizedExperiment", "assay")
+#' @rawNamespace export("assay")
 #' @import shiny
 #' @note This function deals with
 #' extraction of compendium elements.  The overall scope is
@@ -24,8 +27,9 @@ htxApp = function() {
    sidebarPanel(
     helpText(h2("SRA human RNA-seq extractor.")),
     helpText("Add study accession numbers to 
-'keep' box; SummarizedExperiment will
-be returned when 'return SE' is pressed"),
+'keep' box. SummarizedExperiment will
+be returned when 'return SE' is pressed.
+To browse all records, clear the 'keep' box."),
     actionButton("btnSend", strong("return SE")),
     textInput("concept", "concept", "cancer"), width=3,
     selectInput("studyAcc", "keep", unique(studdata$study_accession),
@@ -63,7 +67,7 @@ Cancer Institute by reprocessing all RNA-seq studies in the NCBI SRA.",
    npvec = nperstud[rownames(tmp)]
    tmp = cbind(Nexp=as.numeric(npvec), tmp[,-1])
    tmp
-   })
+   }, options=list(lengthMenu=c(5,10,25,50), pageLength=10))
   observe({ if (input$btnSend > 0) isolate({
           curTable = studdata
           curTable = curTable[which(curTable$study_accession %in% input$studyAcc),]
