@@ -31,7 +31,7 @@ htxApp = function() {
 be returned when 'return SE' is pressed.
 To browse all records, clear the 'keep' box."),
     actionButton("btnSend", strong("return SE")),
-    textInput("concept", "concept", "cancer"), width=3,
+    textInput("concept", "concept (regexp ok)", "cancer"), width=3,
     selectInput("studyAcc", "keep", unique(studdata$study_accession),
       multiple=TRUE)
    ),
@@ -75,6 +75,9 @@ Cancer Institute by reprocessing all RNA-seq studies in the NCBI SRA.",
           if (length(notin)>0) warning("some experiments requested not present in htxcomp.colnames, returning only those available")
           touse = intersect(curTable$experiment_accession, htxcomp::htxcomp.colnames)
           attempt = htxSE[, sort(touse)]
+          mtit = paste(attempt$study_accession, attempt$study_title, sep=": ")
+          tis = unique(mtit)
+          metadata(attempt) = c(metadata(attempt), titles=tis)
           stopApp(returnValue=attempt)
                   }) })
   }

@@ -2,6 +2,7 @@
 
 export("assay")
 export(addRD)
+export(getMeta)
 export(htxApp)
 export(htxQuery)
 export(loadHtxcomp)
