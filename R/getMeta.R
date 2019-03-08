@@ -14,7 +14,6 @@
 #' head(names(chk))
 #' names(S4Vectors::metadata(chk)$non.atomic)
 #' chk[1:3,1:5]
-#' @export
 getMeta = function(study.accession="ERP005938", entity="full",
    asDataFrame=TRUE) {
  stopifnot(is(study.accession, 'character'), length(study.accession)==1)

@@ -2,11 +2,11 @@
 
 export("assay")
 export(addRD)
-export(getMeta)
 export(htxApp)
 export(htxQuery)
 export(loadHtxcomp)
 export(procExpToGene)
+export(sampleAtts)
 export(tx2gene_gencode27)
 import(shiny)
 importFrom("SummarizedExperiment", "assay")
