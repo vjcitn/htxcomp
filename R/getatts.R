@@ -1,30 +1,4 @@
 
-attproc.old = function(x) {
- tt = x[[1]][,1]
- vals = lapply(x, "[[", "value")
-# nv = sapply(vals, length)
-# if (!all(nv==nv[1])) {
-#   message("discrepant tag sets among samples")
-#   message("returning values for common tags")
-#   tags = lapply(x, "[[", "tag")
-#   lta = sapply(tags,length)
-#   tlta = table(lta)
-#   mod = as.numeric(names(tlta)[which.max(tlta)])
-#   bad = which(lta < mod)
-#   vals = vals[-bad]
-#   tags = tags[-bad]
-#   t1 = tags[[1]]
-#   for (i in 1:length(vals)) {
-#     names(vals[[i]]) = tags[[i]]
-#     t1 = intersect(t1, tags[[i]])
-#     }
-#   vals = lapply(vals, function(x) x[t1])
-#   }
- ans = do.call(rbind, vals)
- colnames(ans) = tt
- ans
-}
-
 # this function will process the sample.attributes
 # element of the tibbles returned by SRAdbV2
 # ft is a character vector of 'forced tags'
@@ -68,16 +42,21 @@ SRAdbV2::Omicidx$new()$search(q=
 sampleAtts = function(studyAcc, returnBad=FALSE, forcedTags=NULL) {
  st = getStudy(studyAcc)
  nr = nrow(st)
- nrs = sapply((st %>% dplyr::select(sample.attributes))[[1]], nrow)
- if (is.null(forcedTags) && !all(nrs==nrs[1])) {
-  warning("varying numbers of sample.attributes recorded through study")
-  nrt = table(nrs)
-  ind = which.max(nrt) # modal attr count
-  num2use = as.numeric(names(nrt)[ind])
-  bad = st[which(nrs < num2use),]
-  nb = nrow(bad)
-#  if (!returnBad) message(nb, " experiments were excluded, use 'returnBad=TRUE' to see why their sample attributes are different from the majority")
-  st = st[-which(nrs < num2use),]
+ if (nr==0) return(data.frame(study.accession=studyAcc, norowsInGetStudy=TRUE))
+ sampatts = (st %>% dplyr::select(sample.attributes))[[1]]
+ nrs = sapply(sampatts, nrow)
+ if (is.null(forcedTags) & !all(nrs==nrs[1])) {
+  message("varying numbers of sample.attributes recorded through study")
+  message("taking union of all available tags for study")
+  allt = lapply(sampatts, function(x) x[,"tag",drop=TRUE])
+  forcedTags = union(unlist(allt))
+#  nrt = table(nrs)
+#  ind = which.max(nrt) # modal attr count
+#  num2use = as.numeric(names(nrt)[ind])
+#  bad = st[which(nrs < num2use),]
+#  nb = nrow(bad)
+##  if (!returnBad) message(nb, " experiments were excluded, use 'returnBad=TRUE' to see why their sample attributes are different from the majority")
+#  st = st[-which(nrs < num2use),]
   }
  ea = st$experiment.accession
  procd = attproc(st$sample.attributes, forcedTags)
