@@ -67,8 +67,9 @@ SRAdbV2::Omicidx$new()$search(q=
 #' @export
 sampleAtts = function(studyAcc, returnBad=FALSE, forcedTags=NULL) {
  st = getStudy(studyAcc)
+ nr = nrow(st)
  nrs = sapply((st %>% dplyr::select(sample.attributes))[[1]], nrow)
- if (!all(nrs==nrs[1])) {
+ if (is.null(forcedTags) && !all(nrs==nrs[1])) {
   warning("varying numbers of sample.attributes recorded through study")
   nrt = table(nrs)
   ind = which.max(nrt) # modal attr count
@@ -81,7 +82,6 @@ sampleAtts = function(studyAcc, returnBad=FALSE, forcedTags=NULL) {
  ea = st$experiment.accession
  procd = attproc(st$sample.attributes, forcedTags)
  np = nrow(procd)
- nr = nrow(st)
  if (np != nr) message("metadata on ", nr-np, " experiments could not be processed; set returnBad = TRUE to get full metadata on the excluded experiments")
  if (returnBad) return(bad)
  data.frame(cbind(study.accession=studyAcc, 
