@@ -49,7 +49,7 @@ sampleAtts = function(studyAcc, returnBad=FALSE, forcedTags=NULL) {
   message("varying numbers of sample.attributes recorded through study")
   message("taking union of all available tags for study")
   allt = lapply(sampatts, function(x) x[,"tag",drop=TRUE])
-  forcedTags = union(unlist(allt))
+  forcedTags = unique(unlist(allt))
 #  nrt = table(nrs)
 #  ind = which.max(nrt) # modal attr count
 #  num2use = as.numeric(names(nrt)[ind])
