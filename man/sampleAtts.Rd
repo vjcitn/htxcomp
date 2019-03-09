@@ -4,13 +4,18 @@
 \alias{sampleAtts}
 \title{retrieve a normalized data.frame of sample attributes for SRAdbV2 study tibbles}
 \usage{
-sampleAtts(studyAcc, returnBad = FALSE)
+sampleAtts(studyAcc, returnBad = FALSE, forcedTags = NULL)
 }
 \arguments{
 \item{studyAcc}{character(1) accession}
 
 \item{returnBad}{logical(1) returns tibble of experiment metadata for which number 
 of fields in sample.attributes is less than the number in the majority}
+
+\item{forcedTags}{NULL or character(), introduced to cope with studies
+for which SRA metadata has inconsistent field sets across experiments.
+Supply a vector of tags that need to be retrieved; when the metadata
+lacks a value for the tag it is filled with NA.}
 }
 \description{
 retrieve a normalized data.frame of sample attributes for SRAdbV2 study tibbles
